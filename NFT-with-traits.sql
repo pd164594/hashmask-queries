@@ -45,18 +45,16 @@ select * from all_data
 where seller != "0x0000000000000000000000000000000000000000"
 order by sold_for desc
 ),
-
-seller_stats as (
-select 
-seller,
-buyer,
-block_timestamp, 
-transaction_hash, 
-count(NFT_ID) as hash_sold, 
-avg(sold_for) as eth_received,
-from final_data
-group by seller, buyer, block_timestamp, transaction_hash
+hashmask_traits as (
+SELECT 
+cast(ID as STRING) as ID, skin, Character, Eyes, Mask, Item, Rarity
+FROM `big-264521.hashmask.hashmask_traits` 
 )
 
-select * from seller_stats
-order by eth_received desc
+select 
+*,
+avg(sold_for) over (partition by transaction_hash) / count(*) over (partition by transaction_hash) as price_paid
+from final_data a
+join hashmask_traits b
+on a.NFT_ID = b.ID
+order by block_timestamp
